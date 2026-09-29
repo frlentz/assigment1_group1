@@ -92,10 +92,10 @@ class FlexibleConsumerModel:
         d, m, T = self.data, self.m, self.T
 
         # --- Decision variables ---------------------------------------------------------------
-        self.var["load"] = m.addVars(T, name="load")       # L_t: flexible consumption
-        self.var["pv"] = m.addVars(T, name="pv")           # g_t: PV produced / used
-        self.var["import"] = m.addVars(T, name="import")   # i_t: grid import
-        self.var["export"] = m.addVars(T, name="export")   # e_t: grid export
+        self.var["load"] = m.addVars(T, lb=-GRB.INFINITY, name="load")       # L_t: flexible consumption
+        self.var["pv"] = m.addVars(T, lb=-GRB.INFINITY, name="pv")           # g_t: PV produced / used
+        self.var["import"] = m.addVars(T, lb=-GRB.INFINITY, name="import")   # i_t: grid import
+        self.var["export"] = m.addVars(T, lb=-GRB.INFINITY, name="export")   # e_t: grid export
 
         # --- Objective -----------------------------------------------------------------------
         p = d.energy_price
@@ -115,10 +115,13 @@ class FlexibleConsumerModel:
         )
 
         # --- Constraints  -----------------------------------------------------------------------
-        self.con["balance"] = m.addConstrs((load[t] + exp[t] == imp[t] + pv[t] for t in T), name="balance")
-        self.con["pv_limit"] = m.addConstrs((pv[t] <= d.pv_available[t] for t in T), name="pv_limit")
-        self.con["load_max"] = m.addConstrs((load[t] <= d.load_max_kWh for t in T), name="load_max")
+        self.con["balance"] = m.addConstrs((load[t] == pv[t] + imp[t] - exp[t] for t in T), name="balance")
         self.con["load_min"] = m.addConstrs((load[t] >= d.load_min_kWh for t in T), name="load_min")
+        self.con["load_max"] = m.addConstrs((load[t] <= d.load_max_kWh for t in T), name="load_max")
+        self.con["pv_min"] = m.addConstrs((pv[t] >= 0 for t in T), name="pv_min")
+        self.con["pv_max"] = m.addConstrs((pv[t] <= d.pv_available[t] for t in T), name="pv_max")
+        self.con["import_nonneg"] = m.addConstrs((imp[t] >= 0 for t in T), name="import_nonneg")
+        self.con["export_nonneg"] = m.addConstrs((exp[t] >= 0 for t in T), name="export_nonneg")
 
         m.update()
         return self
