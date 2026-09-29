@@ -91,37 +91,37 @@ class FlexibleConsumerModel:
         """
         d, m, T = self.data, self.m, self.T
 
-        # --- Decision variables --------------------------------------------------------
-        # TODO: identify and declare the decision variables of your formulation.
-        # Store every variable family in self.var["<name>"]: solve() then returns its hourly
-        # values automatically as a column of results.hourly.
-        # Pattern for hourly variables (one per hour):
-        #   self.var["<name>"] = m.addVars(T, lb=-GRB.INFINITY, vtype=GRB.CONTINUOUS, name="<name>")
-        # Pattern for a single (daily) variable:
-        #   self.var["<name>"] = m.addVar(lb=-GRB.INFINITY, vtype=GRB.CONTINUOUS, name="<name>")
-        # Notes:
-        # * gurobipy indexes the names automatically: name="<name>" in addVars(T, ...) creates
-        #   <name>[0], <name>[1], ..., <name>[23] - no need to build per-hour names yourself.
-        # * vtype: the same format takes GRB.BINARY or GRB.INTEGER if you ever need them (the
-        #   problem then becomes a MILP and dual values are no longer defined; solve() skips them).
-        # * lb defaults to 0 in gurobipy: a free variable needs an explicit lb=-GRB.INFINITY, and
-        #   a bound you want a dual for must be an explicit constraint, not lb=/ub= (see the README).
-        # * naming the families "import", "export", "load", "pv" makes the standard plots of
-        #   src/plotting.py work out of the box.
+        # --- Decision variables ---------------------------------------------------------------
+        self.var["load"] = m.addVars(T, lb=-GRB.INFINITY, name="load")       # L_t: flexible consumption
+        self.var["pv"] = m.addVars(T, lb=-GRB.INFINITY, name="pv")           # g_t: PV produced / used
+        self.var["import"] = m.addVars(T, lb=-GRB.INFINITY, name="import")   # i_t: grid import
+        self.var["export"] = m.addVars(T, lb=-GRB.INFINITY, name="export")   # e_t: grid export
 
-        # --- Objective ---------------------------------------------------------------
-        # TODO: express the objective function and its direction (GRB.MINIMIZE or GRB.MAXIMIZE):
-        #   m.setObjective(gp.quicksum(<expression in t> for t in T), <direction>)
-        # The input-data attributes (with units) are documented in src/data_loader.py (InputData).
+        # --- Objective -----------------------------------------------------------------------
+        p = d.energy_price
+        load = self.var["load"]
+        pv = self.var["pv"]
+        imp = self.var["import"]
+        exp = self.var["export"] 
 
-        # --- Constraints -------------------------------------------------------------
-        # TODO: add the constraints of your formulation.
-        # Pattern for hourly constraints (one per hour, duals returned as a 24-vector; names are
-        # indexed automatically, like for the variables):
-        #   self.con["<name>"] = m.addConstrs(
-        #       (<lhs expression> - <rhs expression> <= 0 for t in T), name="<name>")
-        # Pattern for a single constraint (dual returned as a scalar):
-        #   self.con["<name>"] = m.addConstr(<lhs expression> - <rhs expression> <= 0, name="<name>")
+        m.setObjective(
+            gp.quicksum(
+                d.consumption_utility * load[t] 
+                - (p[t] + d.import_tariff) * imp[t] 
+                + (p[t] - d.export_tariff) * exp[t] 
+                - d.pv_marginal_cost * pv[t]
+                for t in T),
+            GRB.MAXIMIZE,
+        )
+
+        # --- Constraints  -----------------------------------------------------------------------
+        self.con["balance"] = m.addConstrs((load[t] == pv[t] + imp[t] - exp[t] for t in T), name="balance")
+        self.con["load_min"] = m.addConstrs((load[t] >= d.load_min_kWh for t in T), name="load_min")
+        self.con["load_max"] = m.addConstrs((load[t] <= d.load_max_kWh for t in T), name="load_max")
+        self.con["pv_min"] = m.addConstrs((pv[t] >= 0 for t in T), name="pv_min")
+        self.con["pv_max"] = m.addConstrs((pv[t] <= d.pv_available[t] for t in T), name="pv_max")
+        self.con["import_nonneg"] = m.addConstrs((imp[t] >= 0 for t in T), name="import_nonneg")
+        self.con["export_nonneg"] = m.addConstrs((exp[t] >= 0 for t in T), name="export_nonneg")
 
         m.update()
         return self
