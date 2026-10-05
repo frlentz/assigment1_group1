@@ -211,3 +211,4 @@ __marimo__/
 results/*
 !results/.gitkeep
 *.md
+*.pdf
