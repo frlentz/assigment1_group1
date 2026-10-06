@@ -60,6 +60,7 @@ class LinearDisutilityModel(FlexibleConsumerModel):
             GRB.MINIMIZE
         )
 
+        # Constraints
         self.con['balance'] = m.addConstrs((pv[t] + imp[t] - exp[t] == load[t] for t in T), name='balance')
         self.con['load_min'] = m.addConstrs((load[t] >= d.load_min_kWh for t in T), name='load_min')
         self.con['load_max'] = m.addConstrs((load[t] <= d.load_max_kWh for t in T), name='load_max')
@@ -96,10 +97,37 @@ class QuadraticDisutilityModel(FlexibleConsumerModel):
             raise ValueError(f'{d.question} has no reference profile or quadratic disutility')
 
         # Decision variables
+        self.var['load'] = m.addVars(T, lb=-GRB.INFINITY, name='load')  # L_t: flexible consumption
+        self.var['pv'] = m.addVars(T, lb=-GRB.INFINITY, name='pv')      # g_t: PV produced / used
+        self.var['import'] = m.addVars(T, lb=-GRB.INFINITY, name='import')      # i_t: grid import
+        self.var['export'] = m.addVars(T, lb=-GRB.INFINITY, name='export')      # e_t: grid export
 
         # Objective
+        load = self.var['load']
+        p = d.energy_price
+        pv = self.var['pv']
+        imp = self.var['import']
+        exp = self.var['export']
+        ref = d.reference_load
 
-        #Constraints
+        m.setObjective(
+            gp.quicksum(
+                imp[t]*(p[t] + d.import_tariff) -
+                exp[t]*(p[t] - d.export_tariff) +
+                d.pv_marginal_cost * pv[t] +
+                d.quadratic_disutility*(load[t] - ref[t])*(load[t] - ref[t])
+            for t in T),
+            GRB.MINIMIZE
+        )
+
+        # Constraints
+        self.con['balance'] = m.addConstrs((pv[t] + imp[t] - exp[t] == load[t] for t in T), name='balance')
+        self.con['load_min'] = m.addConstrs((load[t] >= d.load_min_kWh for t in T), name='load_min')
+        self.con['load_max'] = m.addConstrs((load[t] <= d.load_max_kWh for t in T), name='load_max')
+        self.con['pv_min'] = m.addConstrs((pv[t] >= 0 for t in T), name='pv_min')
+        self.con['pv_max'] = m.addConstrs((pv[t] <= d.pv_available[t] for t in T), name='pv_max')
+        self.con['import_nonneg'] = m.addConstrs((imp[t] >= 0 for t in T), name='import_nonneg')
+        self.con['export_nonneg'] = m.addConstrs((exp[t] >= 0 for t in T), name='export_nonneg')
 
         m.update()
 
