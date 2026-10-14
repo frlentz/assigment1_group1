@@ -15,19 +15,26 @@ from pathlib import Path
 import matplotlib
 
 from src.data_loader import load_question, list_questions
-from src.model import FlexibleConsumerModel, Results
+from src.model import FlexibleConsumerModel, Results 
+from src.model_q2 import LinearDisutilityModel, QuadraticDisutilityModel
 from src.plotting import plot_duals, plot_inputs, plot_scenario_comparison, plot_schedule
 from src.scenarios import scale_prices, scale_pv, set_tariffs
 
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 
+MODELS = {"Q2_linear": LinearDisutilityModel,
+          "Q2_quadratic": QuadraticDisutilityModel
+          # Add new models here
+          }
 
 def run_base_case(question: str, out: Path, show: bool) -> Results | None:
     data = load_question(question)
     print(data.summary(), "\n")
     plot_inputs(data, save_to=out / "inputs.png")
 
-    model = FlexibleConsumerModel(data).build()
+    # Lookup the correct model implemented based on question string
+    # model = FlexibleConsumerModel(data).build()
+    model = MODELS.get(question, FlexibleConsumerModel)(data).build()
     try:
         results = model.solve()
     except NotImplementedError as e:
@@ -55,7 +62,8 @@ def run_scenarios(question: str, out: Path) -> dict[str, Results]:
     }
     runs: dict[str, Results] = {}
     for name, data in scenarios.items():
-        results = FlexibleConsumerModel(data).build().solve()
+        #results = FlexibleConsumerModel(data).build().solve()
+        results = MODELS.get(question, FlexibleConsumerModel)(data).build().solve()
         results.save(out, tag=name)
         runs[name] = results
         print(f"{name:>14}: cost {results.objective:8.2f} DKK | import {results.hourly['import'].sum():5.1f} kWh"

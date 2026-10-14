@@ -210,3 +210,5 @@ __marimo__/
 .DS_Store
 results/*
 !results/.gitkeep
+*.md
+*.pdf
