@@ -1,4 +1,3 @@
-from __future__ import annotations
 import gurobipy as gp
 from .model_q2 import QuadraticDisutilityModel
 
