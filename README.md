@@ -62,7 +62,7 @@ src/
   data_loader.py         load_question("Q1_caseA") -> InputData (all parameters, with units)
   model.py               FlexibleConsumerModel: build() / solve() -> Results (primal + dual values)
   model_q2.py            Question 2: LinearDisutilityModel (2.b), QuadraticDisutilityModel (2.c)
-  model_q3.py            Question 3: MinEnergyModel (3.d (Question 2.c model + minimum daily energy))
+  model_q3.py            Question 3: MinEnergyModel (3.d (Question 2.c model + minimum daily energy)), BatteryModel (3.g (MinEnergyModel + battery))
   scenarios.py           Helpers that derive sensitivity scenarios from a base InputData
   plotting.py            Figures for inputs, optimal schedule, duals and scenario comparisons
 data/
@@ -97,7 +97,8 @@ Each question has its own model class, which `main.py` selects from the `MODELS`
 `Q1_caseA`/`Q1_caseB` use `FlexibleConsumerModel`, 
 `Q2_linear` uses `LinearDisutilityModel`, 
 `Q2_quadratic` uses `QuadraticDisutilityModel`, 
-`Q3` uses `MinEnergyModel`.
+`Q3` uses `MinEnergyModel`, 
+`Q3_battery` uses `BatteryModel`.
 
 **Use it from a notebook or your own script** (run from the repository root):
 ```python

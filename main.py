@@ -17,7 +17,7 @@ import matplotlib
 from src.data_loader import load_question, list_questions
 from src.model import FlexibleConsumerModel, Results 
 from src.model_q2 import LinearDisutilityModel, QuadraticDisutilityModel
-from src.model_q3 import MinEnergyModel
+from src.model_q3 import MinEnergyModel, BatteryModel
 from src.plotting import plot_duals, plot_inputs, plot_scenario_comparison, plot_schedule
 from src.scenarios import scale_prices, scale_pv, set_tariffs
 
@@ -25,7 +25,8 @@ RESULTS_DIR = Path(__file__).resolve().parent / "results"
 
 MODELS = {"Q2_linear": LinearDisutilityModel,
           "Q2_quadratic": QuadraticDisutilityModel,
-          "Q3": MinEnergyModel
+          "Q3": MinEnergyModel,
+          "Q3_battery": BatteryModel
           # Add new models here
           }
 
