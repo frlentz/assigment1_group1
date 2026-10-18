@@ -18,6 +18,7 @@ import matplotlib
 from src.data_loader import InputData, load_question, list_questions
 from src.model import FlexibleConsumerModel, Results 
 from src.model_q2 import LinearDisutilityModel, NonSeparableDisutilityModel, QuadraticDisutilityModel
+from src.model_q3 import MinEnergyModel, BatteryModel
 from src.plotting import plot_duals, plot_inputs, plot_scenario_comparison, plot_schedule
 from src.scenarios import scale_prices, scale_pv, set_tariffs
 
