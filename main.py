@@ -27,6 +27,8 @@ RESULTS_DIR = Path(__file__).resolve().parent / "results"
 MODELS = {"Q2_linear": LinearDisutilityModel,
           "Q2_quadratic": QuadraticDisutilityModel,
           "Q2_nonseparable": NonSeparableDisutilityModel,  # 2.e: memory 0.7 set in the class
+          "Q3": MinEnergyModel,
+          "Q3_battery": BatteryModel,
           # Add new models here
           }
 
