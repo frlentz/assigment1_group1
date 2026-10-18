@@ -41,6 +41,23 @@ def roll_prices(data: InputData, hours: int) -> InputData:
     return replace(data, energy_price=np.roll(data.energy_price, hours))
 
 
+def two_level_prices(data: InputData, block_hours: int) -> InputData:
+    """Replace the hourly prices by two levels, mean -/+ standard deviation of ``data.energy_price``:
+    ``block_hours`` low hours, then ``block_hours`` high hours, repeated over the day (1 = alternating
+    every hour). Every block length gives the same set of prices in a different order (Question 2.(e).iv)."""
+    p = data.energy_price
+    if len(p) % (2 * block_hours):
+        raise ValueError(f"block_hours={block_hours} does not tile {len(p)} hours into low/high pairs")
+    high = (np.arange(len(p)) // block_hours) % 2 == 1
+    return replace(data, energy_price=np.where(high, p.mean() + p.std(), p.mean() - p.std()))
+
+
+def flat_reference(data: InputData) -> InputData:
+    """Spread the daily energy of the reference profile evenly over all hours (kWh/h)."""
+    ref = data.reference_load
+    return replace(data, reference_load=np.full(len(ref), ref.mean()))
+
+
 def set_tariffs(data: InputData, import_tariff: float | None = None, export_tariff: float | None = None) -> InputData:
     """Override the import and/or export grid tariff (DKK/kWh)."""
     return replace(
