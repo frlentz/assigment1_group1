@@ -61,6 +61,7 @@ main.py                  Entry point: load data -> build model -> solve -> save 
 src/
   data_loader.py         load_question("Q1_caseA") -> InputData (all parameters, with units)
   model.py               FlexibleConsumerModel: build() / solve() -> Results (primal + dual values)
+  model_q2.py            Question 2: LinearDisutilityModel (2.b), QuadraticDisutilityModel (2.c)
   scenarios.py           Helpers that derive sensitivity scenarios from a base InputData
   plotting.py            Figures for inputs, optimal schedule, duals and scenario comparisons
 data/
@@ -89,6 +90,12 @@ python main.py --question Q1_caseA              # base case
 python main.py --question Q1_caseA --scenarios  # + example sensitivity scenarios
 python main.py --show                           # open the figures in a window
 ```
+
+**Models per question** 
+Each question has its own model class, which `main.py` selects from the `MODELS` dictionary:
+`Q1_caseA`/`Q1_caseB` use `FlexibleConsumerModel`, 
+`Q2_linear` uses `LinearDisutilityModel`, 
+`Q2_quadratic` uses `QuadraticDisutilityModel`, 
 
 **Use it from a notebook or your own script** (run from the repository root):
 ```python
